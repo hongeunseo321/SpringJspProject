@@ -1,5 +1,4 @@
 const {defineStore} = Pinia
-// replyStore 
 const useRecipeStore=defineStore('recipe',{
 	// state : 공통 사용 변수 , props 
 	state:()=>({
