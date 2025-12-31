@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
 	pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -31,10 +32,23 @@ p {
 	cursor: pointer;
 }
 </style>
+<script>
+const SESSION_ID='${sessionScope.id}'
+</script>
 </head>
 <body>
-	<div class="container">
-		<div class="row" id="recipe_detail">
+	<div class="container" style="margin-top: 10px;">
+		<div class="row text-right">
+			<c:if test="${sessionScope.id==null }">
+				<a href="/member/login" class="btn btn-sm btn-danger">로그인</a>
+			</c:if>
+			<c:if test="${sessionScope.id!=null }">
+				<a href="/member/logout" class="btn btn-sm btn-success">로그아웃</a>
+			</c:if>
+		</div>
+	</div>
+	<div class="container" id="recipe_detail">
+		<div class="row">
 			<table class="table">
 				<tbody>
 					<tr>
@@ -91,8 +105,7 @@ p {
 					<tr>
 						<td width=20% rowspan="2" class="text-center"><img
 							:src="store.detail.vo.chef_poster"
-							style="width: 100px; height: 100px" class="img-circle">
-						</td>
+							style="width: 100px; height: 100px" class="img-circle"></td>
 						<td width=80%>{{store.detail.vo.chef}}</td>
 					</tr>
 					<tr>
@@ -101,31 +114,88 @@ p {
 				</tbody>
 			</table>
 		</div>
-		<div class="row" style="margin-top: 20px" id="recipe_reply"></div>
+		<div class="row" style="margin-top: 20px" id="recipe_reply">
+			<table class="table">
+				<tbody>
+					<tr>
+						<td>
+							<table class="table" v-for="(rvo,index) in rStore.reply_list"
+								:key="index">
+								<tbody>
+									<tr>
+										<td class="text-left">👤{{rvo.name}} &nbsp; {{rvo.dbday}}</td>
+										<td class="text-right">
+											<button class="btn-xs btn-success" v-if="rStore.sessionId===rvo.id"
+												@click="rStore.toggleUpdate(rvo.no,rvo.msg)">
+												{{rStore.upReplyNo===rvo.no?'취소':'수정'}}
+											</button>
+											<button class="btn-xs btn-warning" v-if="rStore.sessionId===rvo.id"
+												@click="rStore.replyDelete(rvo.no)">삭제</button>
+										</td>
+									</tr>
+									<tr>
+										<td colspan="2" class="text-left">
+											<pre style="white-space: pre-wrap;">{{rvo.msg}}</pre>
+										</td>
+									</tr>
+									<tr>
+										<td colspan="2" class="text-left" v-if="rStore.upReplyNo===rvo.no">
+											<textarea rows="5" cols="100" style="float: left"
+												v-model="rStore.updateMsg[rvo.no]"></textarea>
+											<button type="button" class="btn-success"
+												style="width: 100px; height: 106px; float: left"
+												@click="rStore.replyUpdate(rvo.no)">댓글수정</button>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<table class="table" v-if="rStore.sessionId">
+				<tbody>
+					<tr>
+						<td>
+							<textarea rows="5" cols="100" style="float: left"
+								v-model="rStore.msg"></textarea>
+							<button type="button" class="btn-success"
+								style="width: 100px; height: 106px; float: left"
+								@click="rStore.replyInsert()">댓글쓰기</button>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
 	</div>
 	<script src="/js/axios.js"></script>
 	<script src="/js/recipeStore.js"></script>
+	<script src="/js/replyStore.js"></script>
 	<script type="text/javascript">
     const {createApp,onMounted} = Vue
     const {createPinia} = Pinia
     const detailApp=createApp({
     	setup(){
         	const store=useRecipeStore();
+        	const rStore=useReplyStore();
+        	
         	const params=new URLSearchParams(location.search)
    		    const no=params.get('no')
    		    
    		    onMounted(()=>{
    		    	store.recipeDetailData(no)
+   		    	rStore.sessionId=SESSION_ID
+   		    	rStore.replyListData(no)
    		    })
    		    
    		    return {
-        		store
+        		store,
+        		rStore
         	}
         }
     })
     detailApp.use(createPinia())
     detailApp.mount("#recipe_detail")
-    
    </script>
 </body>
 </html>
